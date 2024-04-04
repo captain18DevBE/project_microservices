@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 class UserBase(BaseModel):
+    id: str
     full_name: str
     phone_number: str
     email: str
@@ -18,17 +20,21 @@ class User(UserBase):
         orm_mode = True
 
 class TransactionBase(BaseModel):
-    student_id: str
-    student_name: str
     amount: float
 
+
 class TransactionCreate(TransactionBase):
+    owner_id: str
+    fee_id: Optional[int]
+
+
+class TransactionUpdate(TransactionBase):
     pass
 
 class Transaction(TransactionBase):
     id: int
     owner_id: str
-    fee_id: int
+    fee_id: Optional[int]
 
     class Config:
         orm_mode = True
@@ -57,6 +63,21 @@ class AccountCreate(AccountBase):
     user_id: str
 
 class Account(AccountBase):
+    id: int
+    user: Optional[User] = None
+
+    class Config:
+        orm_mode = True
+
+class OTPBase(BaseModel):
+    otp: str
+    expiry: datetime
+    user_id: str
+
+class OTPCreate(OTPBase):
+    pass
+
+class OTP(OTPBase):
     id: int
 
     class Config:

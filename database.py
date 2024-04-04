@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1205@localhost:5432/iBanking_db"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1111@localhost:5432/iBanking"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

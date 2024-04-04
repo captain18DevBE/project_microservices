@@ -1,40 +1,27 @@
+import random
+import string
+from datetime import datetime, timedelta
+from email.message import EmailMessage
+import smtplib
+from email.mime.text import MIMEText
+
 from sqlalchemy.orm import Session
-from . import models, schemas
+import models
+import schemas
 
 
-# Account CRUD
-def get_account(db: Session, account_id: int):
-    return db.query(models.Account).filter(models.Account.id == account_id).first()
-
-def create_account(db: Session, account: schemas.AccountCreate):
-    db_account = models.Account(**account.dict())
-    db.add(db_account)
-    db.commit()
-    db.refresh(db_account)
-    return db_account
-
-def update_account(db: Session, account_id: int, account_update: schemas.AccountUpdate):
-    db_account = db.query(models.Account).filter(models.Account.id == account_id).first()
-    if db_account:
-        for attr, value in account_update.dict().items():
-            setattr(db_account, attr, value)
-        db.commit()
-        db.refresh(db_account)
-    return db_account
-
-def delete_account(db: Session, account_id: int):
-    db_account = db.query(models.Account).filter(models.Account.id == account_id).first()
-    if db_account:
-        db.delete(db_account)
-        db.commit()
-    return db_account
-
-# User CRUD
+# User 
 def get_user(db: Session, user_id: str):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
+
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_users(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.User).offset(skip).limit(limit).all()
+
 
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(**user.dict())
@@ -43,76 +30,93 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
-def update_user(db: Session, user_id: str, user_update: schemas.UserUpdate):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if db_user:
-        for attr, value in user_update.dict().items():
-            setattr(db_user, attr, value)
-        db.commit()
-        db.refresh(db_user)
-    return db_user
+def create_transaction(db: Session, transaction: schemas.TransactionCreate, otp: str):
+    # Lấy thông tin về người dùng, loại phí và các giao dịch liên quan
+    user = db.query(models.User).filter(models.User.id == transaction.owner_id).first()
+    fee = db.query(models.Fee).filter(models.Fee.id == transaction.fee_id).first()
 
-def delete_user(db: Session, user_id: str):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if db_user:
-        db.delete(db_user)
-        db.commit()
-    return db_user
+    # Kiểm tra xem người dùng và loại phí có tồn tại hay không
+    if not user:
+        raise ValueError("User not found")
+    if not fee:
+        raise ValueError("Fee not found")
 
-# Transaction CRUD
-def get_transaction(db: Session, transaction_id: int):
-    return db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
+    # Kiểm tra số dư của người dùng và số tiền của loại phí
+    if user.balance < fee.amount_due or user.balance < transaction.amount:
+        raise ValueError("Insufficient balance")
 
-def create_transaction(db: Session, transaction: schemas.TransactionCreate):
+    # Kiểm tra xem khoản phí đã được thanh toán hay chưa
+    fee_transactions = db.query(models.Transaction).filter(models.Transaction.fee_id == transaction.fee_id).all()
+    if fee_transactions:
+        raise ValueError("Fee already paid")
+
+    # Kiểm tra xem OTP có tồn tại và hợp lệ không
+    db_otp = db.query(models.OTP).filter(
+        models.OTP.user_id == transaction.owner_id,
+        models.OTP.otp == otp,
+        models.OTP.expiry > datetime.utcnow()
+    ).first()
+    if not db_otp:
+        raise ValueError("Invalid or expired OTP")
+
+    # Đánh dấu mã OTP đã được sử dụng
+    db.delete(db_otp)
+    db.commit()
+
+    # Tạo giao dịch mới
     db_transaction = models.Transaction(**transaction.dict())
     db.add(db_transaction)
     db.commit()
-    db.refresh(db_transaction)
-    return db_transaction
 
-def update_transaction(db: Session, transaction_id: int, transaction_update: schemas.TransactionUpdate):
-    db_transaction = db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
-    if db_transaction:
-        for attr, value in transaction_update.dict().items():
-            setattr(db_transaction, attr, value)
-        db.commit()
-        db.refresh(db_transaction)
-    return db_transaction
-
-def delete_transaction(db: Session, transaction_id: int):
-    db_transaction = db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
-    if db_transaction:
-        db.delete(db_transaction)
-        db.commit()
-    return db_transaction
-
-# Fee CRUD
-def get_fee(db: Session, fee_id: int):
-    return db.query(models.Fee).filter(models.Fee.id == fee_id).first()
-
-def create_fee(db: Session, fee: schemas.FeeCreate):
-    db_fee = models.Fee(**fee.dict())
-    db.add(db_fee)
+    # Trừ số tiền tương ứng từ số dư của người dùng
+    user.balance -= fee.amount_due
     db.commit()
-    db.refresh(db_fee)
-    return db_fee
 
-def update_fee(db: Session, fee_id: int, fee_update: schemas.FeeUpdate):
-    db_fee = db.query(models.Fee).filter(models.Fee.id == fee_id).first()
-    if db_fee:
-        for attr, value in fee_update.dict().items():
-            setattr(db_fee, attr, value)
+    # Cập nhật lại số dư của người dùng trong database
+    db.refresh(user)
+
+    return db_transaction
+
+
+# Hằng số
+OTP_EXPIRY_MINUTES = 5
+
+def generate_otp(db: Session, length=6, user_id=None):
+    """Tạo mã OTP ngẫu nhiên và lưu vào cơ sở dữ liệu."""
+    # Kiểm tra xem user_id có tồn tại không
+    if user_id is None:
+        raise ValueError("user_id cannot be None")
+
+    # Tạo mã OTP ngẫu nhiên
+    otp = ''.join(random.choices(string.digits, k=length))
+    
+    try:
+        otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+        db_otp = models.OTP(otp=otp, expiry=otp_expiry, user_id=user_id)
+        db.add(db_otp)
         db.commit()
-        db.refresh(db_fee)
-    return db_fee
+    except Exception as e:
+        db.rollback()  # Hoàn tác thay đổi trong trường hợp có lỗi
+        raise e
+    finally:
+        db.close()
+    
+    return otp
 
-def delete_fee(db: Session, fee_id: int):
-    db_fee = db.query(models.Fee).filter(models.Fee.id == fee_id).first()
-    if db_fee:
-        db.delete(db_fee)
-        db.commit()
-    return db_fee
+def send_otp_email(email: str, otp: str):
+    """Gửi mã OTP đến địa chỉ email của người dùng."""
+    msg = EmailMessage()
+    msg.set_content(f"Your OTP for transaction: {otp}")
 
+    msg['Subject'] = "OTP for Transaction"
+    msg['From'] = "anhquan12052003@gmail.com"
+    msg['To'] = email
 
+    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.ehlo()
+        smtp.login("anhquan12052003@gmail.com", "Quan12052003")
+        smtp.send_message(msg)
 
 
