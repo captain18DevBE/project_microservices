@@ -1,0 +1,27 @@
+-- Chèn dữ liệu mẫu cho bảng users
+INSERT INTO users (id, full_name, phone_number, email, balance)
+VALUES 
+    ('1', 'Le Duy', '123456789', 'leduy@example.com', 100.0),
+    ('2', 'Anh Quan', '987654321', 'anhquan@example.com', 50.0);
+
+
+-- Chèn dữ liệu mẫu cho bảng fees
+INSERT INTO fees (student_id, student_name, fee_type, amount_due)
+VALUES 
+    ('1', 'Duy', 'Tuition', 200.0),
+    ('2', 'Quan', 'Books', 100.0);
+
+-- Chèn dữ liệu mẫu cho bảng transactions
+INSERT INTO transactions (amount, owner_id, fee_id)
+VALUES 
+    ( 50.0, '1', 1),
+    ( 25.0, '2', 2);
+
+-- Chèn dữ liệu mẫu cho bảng accounts
+INSERT INTO accounts (username, password, user_id)
+VALUES 
+    ('captainjava', 'password123', '1'),
+    ('cyberkenshi', 'password456', '2');
+	
+	
+
