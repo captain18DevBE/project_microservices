@@ -109,14 +109,14 @@ def send_otp_email(email: str, otp: str):
     msg.set_content(f"Your OTP for transaction: {otp}")
 
     msg['Subject'] = "OTP for Transaction"
-    msg['From'] = "anhquan12052003@gmail.com"
+    msg['From'] = "tranleduy08082002@gmail.com"
     msg['To'] = email
 
     with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
         smtp.ehlo()
         smtp.starttls()
         smtp.ehlo()
-        smtp.login("anhquan12052003@gmail.com", "Quan12052003")
+        smtp.login("tranleduy08082002@gmail.com", "zdievrqhwrvpkitk")
         smtp.send_message(msg)
 
 
