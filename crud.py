@@ -30,15 +30,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
-def update_user_balance(db: Session, user_id: str, new_balance: float):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise ValueError("User not found")
-    user.balance += new_balance
-    db.commit()
-    db.refresh(user)
-    return user
-
 def create_transaction(db: Session, transaction: schemas.TransactionCreate, otp: str):
     # Lấy thông tin về người dùng, loại phí và các giao dịch liên quan
     user = db.query(models.User).filter(models.User.id == transaction.owner_id).first()
@@ -129,9 +120,3 @@ def send_otp_email(email: str, otp: str):
         smtp.send_message(msg)
 
 
-def create_fee(db: Session, fee: schemas.FeeCreate):
-    db_fee = models.Fee(**fee.dict())
-    db.add(db_fee)
-    db.commit()
-    db.refresh(db_fee)
-    return db_fee

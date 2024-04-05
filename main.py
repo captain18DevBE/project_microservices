@@ -31,13 +31,6 @@ def read_user(user_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@app.get("/users/email/{email}", response_model=schemas.User)
-def get_user_by_email(email: str, db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
 
 @app.get("/users/", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -57,12 +50,3 @@ def send_otp(email: str, user_id: str, db: Session = Depends(get_db)):
     # Gửi mã OTP tới email của người dùng
     crud.send_otp_email(email, otp)
     return {"message": "OTP sent successfully"}
-
-@app.post("/update_balance/")
-def update_balance(balance: float, user_id: str, db: Session = Depends(get_db)):
-    return crud.update_user_balance(db=db, user_id=user_id, new_balance=balance)
-
-@app.post("/fees/", response_model=schemas.Fee)
-def create_fee(fee: schemas.FeeCreate, db: Session = Depends(get_db)):
-    db_fee = crud.create_fee(db=db, fee=fee)
-    return db_fee
