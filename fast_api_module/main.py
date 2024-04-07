@@ -4,7 +4,7 @@ import crud, models, schemas
 from database import SessionLocal, engine
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = [""]
+origins = ["*"]
 
 # This code will create the database tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
@@ -54,12 +54,12 @@ def create_transaction(transaction: schemas.TransactionCreate, otp: str, db: Ses
 
 
 @app.post("/send_otp/")
-def send_otp(email: str, user_id: str, db: Session = Depends(get_db)):
+def send_otp(fee_id: int, user_id: str, db: Session = Depends(get_db)):
     # Tạo mã OTP và lưu vào cơ sở dữ liệu
-    otp = crud.generate_otp(db=db, user_id=user_id)
-    
+    otp = crud.generate_otp(db=db, user_id=user_id, fee_id=fee_id)
+    db_user = crud.get_user(db, user_id=user_id)
     # Gửi mã OTP tới email của người dùng
-    crud.send_otp_email(email, otp)
+    crud.send_otp_email(db_user.email, otp)
     return {"message": "OTP sent successfully"}
 
 @app.get("/users/email/{email}", response_model=schemas.User)
