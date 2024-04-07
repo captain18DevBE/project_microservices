@@ -2,11 +2,22 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 import crud, models, schemas
 from database import SessionLocal, engine
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [""]
 
 # This code will create the database tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency to get the database session
 def get_db():
@@ -38,8 +49,8 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return users
 
 @app.post("/transactions/", response_model=schemas.Transaction)
-def create_transaction(transaction: schemas.TransactionCreate, db: Session = Depends(get_db)):
-    return crud.create_transaction(db=db, transaction=transaction)
+def create_transaction(transaction: schemas.TransactionCreate, otp: str, db: Session = Depends(get_db)):
+    return crud.create_transaction(db=db, transaction=transaction, otp=otp)
 
 
 @app.post("/send_otp/")
@@ -50,3 +61,26 @@ def send_otp(email: str, user_id: str, db: Session = Depends(get_db)):
     # Gửi mã OTP tới email của người dùng
     crud.send_otp_email(email, otp)
     return {"message": "OTP sent successfully"}
+
+@app.get("/users/email/{email}", response_model=schemas.User)
+def get_user_by_email(email: str, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.post("/update_balance/")
+def update_balance(balance: float, user_id: str, db: Session = Depends(get_db)):
+    return crud.update_user_balance(db=db, user_id=user_id, new_balance=balance)
+
+@app.post("/fees/", response_model=schemas.Fee)
+def create_fee(fee: schemas.FeeCreate, db: Session = Depends(get_db)):
+    db_fee = crud.create_fee(db=db, fee=fee)
+    return db_fee
+
+@app.get("/fees/{student_id}", response_model=list[schemas.Fee])
+def get_fee_by_student_id(student_id: str, db: Session = Depends(get_db)):
+    fees = crud.get_fee_by_student_id(db=db, student_id=student_id)
+    if not fees:
+        raise HTTPException(status_code=404, detail="Fees not found")
+    return fees
