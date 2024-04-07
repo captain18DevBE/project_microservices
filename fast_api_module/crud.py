@@ -170,7 +170,8 @@ def create_fee(db: Session, fee: schemas.FeeCreate):
     return db_fee
 
 def get_fee_by_student_id(db: Session, student_id: str):
-    return db.query(models.Fee).filter(models.Fee.student_id == student_id and models.Fee.is_paid == False).all()
+    return db.query(models.Fee).filter(models.Fee.student_id == student_id, models.Fee.is_paid == False).all()
+
 
 
 
