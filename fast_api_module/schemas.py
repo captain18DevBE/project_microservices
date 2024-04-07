@@ -72,6 +72,7 @@ class OTPBase(BaseModel):
     otp: str
     expiry: datetime
     user_id: str
+    fee_id: int
 
 class OTPCreate(OTPBase):
     pass

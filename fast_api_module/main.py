@@ -54,12 +54,12 @@ def create_transaction(transaction: schemas.TransactionCreate, otp: str, db: Ses
 
 
 @app.post("/send_otp/")
-def send_otp(email: str, user_id: str, db: Session = Depends(get_db)):
+def send_otp(fee_id: int, user_id: str, db: Session = Depends(get_db)):
     # Tạo mã OTP và lưu vào cơ sở dữ liệu
-    otp = crud.generate_otp(db=db, user_id=user_id)
-    
+    otp = crud.generate_otp(db=db, user_id=user_id, fee_id=fee_id)
+    db_user = crud.get_user(db, user_id=user_id)
     # Gửi mã OTP tới email của người dùng
-    crud.send_otp_email(email, otp)
+    crud.send_otp_email(db_user.email, otp)
     return {"message": "OTP sent successfully"}
 
 @app.get("/users/email/{email}", response_model=schemas.User)
@@ -84,3 +84,11 @@ def get_fee_by_student_id(student_id: str, db: Session = Depends(get_db)):
     if not fees:
         raise HTTPException(status_code=404, detail="Fees not found")
     return fees
+
+
+@app.get("/transaction/{fee_id}", response_model=schemas.Transaction)
+def read_transaction(fee_id: str, db: Session = Depends(get_db)):
+    db_transaction = crud.get_transaction_by_fee(db, fee_id=fee_id)
+    if db_transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return db_transaction

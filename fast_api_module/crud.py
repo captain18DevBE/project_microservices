@@ -87,7 +87,6 @@ def create_transaction(db: Session, transaction: schemas.TransactionCreate, otp:
 OTP_EXPIRY_MINUTES = 5
 
 def generate_otp(db: Session, length=6, user_id=None, fee_id=None):
-    """Tạo mã OTP ngẫu nhiên và lưu vào cơ sở dữ liệu."""
     # Kiểm tra xem user_id và fee_id có tồn tại không
     if user_id is None or fee_id is None:
         raise ValueError("user_id and fee_id cannot be None")
@@ -96,25 +95,44 @@ def generate_otp(db: Session, length=6, user_id=None, fee_id=None):
     otp = ''.join(random.choices(string.digits, k=length))
 
     try:
+        # Kiểm tra xem có OTP nào khác đang hoạt động cho cùng một user_id không
+        existing_otp_same_user = db.query(models.OTP).filter(
+            and_(
+                models.OTP.user_id == user_id,
+                models.OTP.fee_id == fee_id
+            )
+        ).first()
+
         # Kiểm tra xem có OTP nào khác đang hoạt động cho cùng một fee_id không
-        existing_otp = db.query(models.OTP).filter(
+        existing_otp_different_user_same_fee = db.query(models.OTP).filter(
             and_(
                 models.OTP.user_id != user_id,
                 models.OTP.expiry > datetime.now(),
                 models.OTP.fee_id == fee_id
             )
-        ).first()
+        ).all()
 
-        if existing_otp:
-            # Nếu có OTP khác đang hoạt động, kiểm tra thời gian hết hạn của OTP mới
-            otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
-            if otp_expiry > existing_otp.expiry:
-                # Nếu thời gian hết hạn của OTP mới lớn hơn, ghi đè lên OTP hiện tại
-                existing_otp.otp = otp
-                existing_otp.expiry = otp_expiry
+        # So sánh thời gian tạo mới của OTP với thời gian hết hạn của các OTP đã tìm được
+        if any(datetime.now() <= existing.expiry for existing in existing_otp_different_user_same_fee):
+            raise ValueError("Another transaction is in progress")
+
+        if existing_otp_same_user:
+            # Nếu có OTP khác đang hoạt động cho cùng một user_id và fee_id
+            if existing_otp_same_user.expiry > datetime.now():
+                # Kiểm tra thời gian hết hạn của OTP mới
+                otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+                if otp_expiry > existing_otp_same_user.expiry:
+                    # Nếu thời gian hết hạn của OTP mới lớn hơn, ghi đè lên OTP hiện tại
+                    existing_otp_same_user.otp = otp
+                    existing_otp_same_user.expiry = otp_expiry
+                else:
+                    # Nếu thời gian hết hạn của OTP mới không lớn hơn, xóa OTP hiện tại
+                    db.delete(existing_otp_same_user)
             else:
-                # Nếu thời gian hết hạn của OTP mới không lớn hơn, tiếp tục với OTP hiện tại
-                raise ValueError("Another OTP already exists for the same fee_id")
+                # Nếu OTP hiện tại đã hết hạn, ghi đè lên OTP hiện tại
+                otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+                existing_otp_same_user.otp = otp
+                existing_otp_same_user.expiry = otp_expiry
         else:
             # Nếu không có OTP nào khác đang hoạt động, tiếp tục tạo và lưu OTP mới
             otp_expiry = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
@@ -122,6 +140,7 @@ def generate_otp(db: Session, length=6, user_id=None, fee_id=None):
             db.add(db_otp)
 
         db.commit()
+    
     except Exception as e:
         db.rollback()  # Hoàn tác thay đổi trong trường hợp có lỗi
         raise e
@@ -129,6 +148,8 @@ def generate_otp(db: Session, length=6, user_id=None, fee_id=None):
         db.close()
 
     return otp
+
+
 
 
 # Fee
@@ -171,6 +192,9 @@ def create_fee(db: Session, fee: schemas.FeeCreate):
 
 def get_fee_by_student_id(db: Session, student_id: str):
     return db.query(models.Fee).filter(models.Fee.student_id == student_id, models.Fee.is_paid == False).all()
+
+def get_transaction_by_fee(db: Session, fee_id: int):
+    return db.query(models.Transaction).filter(models.Fee.id == fee_id).first()
 
 
 
