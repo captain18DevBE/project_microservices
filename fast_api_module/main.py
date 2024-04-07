@@ -4,7 +4,7 @@ import crud, models, schemas
 from database import SessionLocal, engine
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = [""]
+origins = ["*"]
 
 # This code will create the database tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
