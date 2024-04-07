@@ -84,3 +84,11 @@ def get_fee_by_student_id(student_id: str, db: Session = Depends(get_db)):
     if not fees:
         raise HTTPException(status_code=404, detail="Fees not found")
     return fees
+
+
+@app.get("/transaction/{fee_id}", response_model=schemas.Transaction)
+def read_transaction(fee_id: str, db: Session = Depends(get_db)):
+    db_transaction = crud.get_transaction_by_fee(db, fee_id=fee_id)
+    if db_transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return db_transaction

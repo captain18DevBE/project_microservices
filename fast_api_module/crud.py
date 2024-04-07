@@ -193,6 +193,9 @@ def create_fee(db: Session, fee: schemas.FeeCreate):
 def get_fee_by_student_id(db: Session, student_id: str):
     return db.query(models.Fee).filter(models.Fee.student_id == student_id, models.Fee.is_paid == False).all()
 
+def get_transaction_by_fee(db: Session, fee_id: int):
+    return db.query(models.Transaction).filter(models.Fee.id == fee_id).first()
+
 
 
 
