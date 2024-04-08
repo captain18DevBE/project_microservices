@@ -55,12 +55,22 @@ def create_transaction(transaction: schemas.TransactionCreate, otp: str, db: Ses
 
 @app.post("/send_otp/")
 def send_otp(fee_id: int, user_id: str, db: Session = Depends(get_db)):
-    # Tạo mã OTP và lưu vào cơ sở dữ liệu
-    otp = crud.generate_otp(db=db, user_id=user_id, fee_id=fee_id)
-    db_user = crud.get_user(db, user_id=user_id)
-    # Gửi mã OTP tới email của người dùng
-    crud.send_otp_email(db_user.email, otp)
-    return {"message": "OTP sent successfully"}
+    try:
+        # Tạo mã OTP và lưu vào cơ sở dữ liệu
+        otp = crud.generate_otp(db=db, user_id=user_id, fee_id=fee_id)
+
+        # Gửi mã OTP tới email của người dùng
+        db_user = crud.get_user(db, user_id=user_id)
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        crud.send_otp_email(db_user.email, otp)
+        
+        return {"message": "OTP sent successfully"}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 @app.get("/users/email/{email}", response_model=schemas.User)
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
