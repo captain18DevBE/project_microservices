@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./payment.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="main">
+        <form action="" method="POST" class="form" id="form-1">
+            <h3 class="heading">THANH TOÁN HỌC PHÍ</h3>
+
+            <div class="spacer"></div>
+
+            <div class="form-group">
+                <p class="desc">Người nộp tiền</p>
+                <br/>
+                <label for="fullname" class="form-label">Họ và tên</label>
+                <input id="fullname" name="fullname" type="text" class="form-control" disabled>
+                <span class="form-message"></span>
+                <br/>
+                <label for="phonenumber" class="form-label">Số điện thoại</label>
+                <input id="phonenumber" name="phonenumber" type="text" class="form-control" disabled>
+                <span class="form-message"></span>
+                <br/>
+                <label for="email" class="form-label">Email</label>
+                <input id="email" name="email" type="email" class="form-control" disabled>
+                <span class="form-message"></span>
+            </div>
+
+            <div class="form-group">
+                <p class="desc">Thông tin học phí</p>
+                <br/>
+                <label for="mssv" class="form-label">Mã số sinh viên</label>
+                <input id="mssv" name="mssv" type="text" placeholder="Nhập MSSV" class="form-control" onchange="getTransaction()">
+                <span class="form-message"></span>
+                <br/>
+                <label for="studentname" class="form-label">Họ tên sinh viên</label>
+                <input id="studentname" name="studentname" type="text" placeholder="Nhập họ tên sinh viên" class="form-control" disabled>
+                <span class="form-message"></span>
+                <br/>
+                <label class="form-label">Số tiền cần thanh toán</label>
+                <p id="payment1" class="amount"></p>
+                <span class="form-message"></span>
+            </div>
+
+            <div class="form-group">
+                <p class="desc">Thông tin thanh toán</p>
+                <br/>
+                <label class="form-label">Số dư khả dụng</label>
+                <p id="credit" class="amount"></p>
+                <span class="form-message"></span>
+                <br/>
+                <label class="form-label">Cần thanh toán</label>
+                <p id="payment2" class="amount"></p>
+                <span class="form-message"></span>
+            </div>
+
+            <div class="form-group-condition">
+                <input type="checkbox" value="" class="checkbox" id="checkbox">
+                <p class="condition">Bằng cách nhấp vào đây, người dùng đã chấp nhận <a src="" class="condition-link">Điều khoản</a> và <a scr="" class="condition-link">Điều kiện</a> sử dụng của hệ thống thanh toán iBanking</a></p>
+            </div>
+
+            <button class="form-submit button-disable" disabled>Xác nhận</button>
+        </form>
+    </div>
+    <script src="./payment.js"></script>
+</body>
+</html>
