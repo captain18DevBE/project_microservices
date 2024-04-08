@@ -89,7 +89,6 @@ condition.onclick = function(e) {
     }
 }
 
-var inputUser = {};
 button.onclick = function(e) {
     e.preventDefault();
     input_id = document.querySelector('#mssv').value;
@@ -102,11 +101,12 @@ button.onclick = function(e) {
             {
                 if (allUsers[i].id === mainId)
                 {
-                    localStorage.setItem("mainUser1", allUsers[i].id)
+                    localStorage.setItem("mainUser1_id", allUsers[i].id)
+                    localStorage.setItem("mainUser1_balance", allUsers[i].balance)
                 }
                 if (allUsers[i].id == input_id)
                 {
-                    inputUser = allUsers[i];
+                    localStorage.setItem("inputId", allUsers[i])
                 }
             }
             if (condition.checked == true) {
@@ -117,9 +117,10 @@ button.onclick = function(e) {
                         return response.json()
                     })
                     .then(function(fee) {
-                        localStorage.setItem("fee_id", fee[0].id.toString());
+                        localStorage.setItem("fee_id", fee[0].id);
+                        localStorage.setItem("fee", fee[0].amount_due);
                     })
-                const send_otp = `http://127.0.0.1:8000/send_otp/?fee_id=${localStorage.getItem("fee_id")}&user_id=${localStorage.getItem("mainUser1")}`
+                const send_otp = `http://127.0.0.1:8000/send_otp/?fee_id=${localStorage.getItem("fee_id").toString()}&user_id=${localStorage.getItem("mainUser1_id")}`
                 fetch(send_otp , {
                     method: 'POST',
                     headers: {
@@ -130,9 +131,7 @@ button.onclick = function(e) {
                     .then(function(response) {
                         return response.json();
                     })
-                    .then(function(valid_otp) {
-                        localStorage.setItem("otp", valid_otp);
-                        console.log('OTP Sent');
+                    .then(function(otp_sent) {
                         window.location.href = './otp.html'
                     })
             }
