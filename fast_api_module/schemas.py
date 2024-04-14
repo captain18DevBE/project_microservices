@@ -41,16 +41,15 @@ class Transaction(TransactionBase):
 
 class FeeBase(BaseModel):
     student_id: str
-    student_name: str
     fee_type: str
     amount_due: float
+    is_paid: bool
 
 class FeeCreate(FeeBase):
     pass
 
 class Fee(FeeBase):
     id: int
-    transactions: List[Transaction] = []
 
     class Config:
         orm_mode = True
@@ -73,6 +72,7 @@ class OTPBase(BaseModel):
     otp: str
     expiry: datetime
     user_id: str
+    fee_id: int
 
 class OTPCreate(OTPBase):
     pass

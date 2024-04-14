@@ -38,11 +38,12 @@ class Fee(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(String)
-    student_name = Column(String)
     fee_type = Column(String)
     amount_due = Column(Float)
+    is_paid = Column(Boolean, default=False)
 
     transactions = relationship("Transaction", back_populates="fee")
+    otp = relationship("OTP", back_populates="fee")
 
 
 
@@ -62,6 +63,7 @@ class OTP(Base):
     otp = Column(String, index=True)
     expiry = Column(DateTime, default=datetime.utcnow)
     user_id = Column(String, ForeignKey("users.id"))
+    fee_id = Column(Integer, ForeignKey("fees.id")) 
 
-    # Liên kết với bảng User
     user = relationship("User", back_populates="otp")
+    fee = relationship("Fee", back_populates="otp")

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./success.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="main">
+        <form action="" method="POST" class="form" id="form-1">
+            <h3 class="heading">Thanh toán thành công</h3>
+            <div class="spacer"></div>
+            <img src="./payment-success.png" alt="payment success" class="success-img">
+            <p class="desc">Cảm ơn bạn đã thanh toán học phí</p>
+
+            <div class="spacer"></div>
+
+            <p class="desc">Chi tiết thanh toán</p>
+            <div class="payment-details">
+                <div class="detail">
+                    <div class="detail-left">Loại giao dịch</div>
+                    <div class="detail-right">iBanking</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-left">Ngân hàng</div>
+                    <div class="detail-right">Vietcombank</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-left">Người nhận</div>
+                    <div class="detail-right">Truong Dai Hoc Ton Duc Thang</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-left">Thanh toán</div>
+                    <div class="detail-right" id="payment"></div>
+                </div>
+                <div class="detail">
+                    <div class="detail-left">Mã giao dịch</div>
+                    <div class="detail-right" id="payment_id"></div>
+                </div>
+            </div>
+            <button class="form-submit">Quay về màn hình chính</button>
+        </form>
+    </div>
+    <script src="./success.js"></script>
+</body>
+</html>
